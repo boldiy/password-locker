@@ -63,18 +63,36 @@ jobs:
             echo 'icon.png not found; skipping icon.icns generation'
           fi
 
-      - name: Build with PyInstaller
+      - name: Build macOS .app with PyInstaller
         run: |
-          # On macOS, --add-data uses ':' as separator
-          # Do NOT bundle key.bin from the repository runner (may be absent or sensitive).
-          # main.py will generate a key at first run if none exists.
-          python -m PyInstaller --onefile --windowed --icon icon.icns main.py
+          # Build an application bundle (.app) instead of a single-file executable.
+          # This prevents Terminal from opening when users double-click the app.
+          if [ -f icon.icns ]; then
+            ICON_ARG="--icon icon.icns"
+          else
+            ICON_ARG=""
+          fi
+          python -m PyInstaller --windowed --name "PasswordLocker" $ICON_ARG main.py
 
-      - name: List dist folder
-        run: ls -la dist || true
+      - name: Package .app into zip
+        run: |
+          APPNAME="PasswordLocker.app"
+          if [ -d "dist/$APPNAME" ]; then
+            ZIPNAME="PasswordLocker-mac.zip"
+            cd dist
+            zip -r "$ZIPNAME" "$APPNAME"
+            mv "$ZIPNAME" .. || true
+            cd ..
+            mkdir -p release
+            mv dist/PasswordLocker-mac.zip release/ || true
+            echo "Packaged dist/$APPNAME -> release/PasswordLocker-mac.zip"
+          else
+            echo "Warning: dist/$APPNAME not found; listing dist contents:";
+            ls -la dist || true
+          fi
 
-      - name: Upload artifact
+      - name: Upload mac .app zip artifact
         uses: actions/upload-artifact@v4
         with:
           name: mac-executable
-          path: dist/main
+          path: release/PasswordLocker-mac.zip
