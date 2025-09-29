@@ -7,6 +7,7 @@ import hashlib
 from cryptography.fernet import Fernet
 import requests
 from time import localtime
+import sys
 
 PASSWORD_FILE = "password.txt"
 SALT_SIZE = 16  # 盐长度
@@ -130,6 +131,19 @@ def view_password():
 root = tk.Tk()
 root.title("密码管理器")
 root.geometry("300x180")
+
+# 尝试设置窗口图标（支持 PyInstaller onefile，使用 sys._MEIPASS 查找打包时的资源）
+try:
+    if getattr(sys, 'frozen', False):
+        base_path = sys._MEIPASS
+    else:
+        base_path = os.path.abspath('.')
+    icon_path = os.path.join(base_path, 'icon.ico')
+    if os.path.exists(icon_path):
+        # Windows 下使用 .ico
+        root.iconbitmap(icon_path)
+except Exception:
+    pass
 
 tk.Label(root, text="输入密码：").pack(pady=10)
 entry_pwd = tk.Entry(root, show="*")

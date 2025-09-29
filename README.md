@@ -48,7 +48,7 @@ pip install pyinstaller
 
 2. 在项目根目录运行下面的命令来生成单文件 GUI exe，并把 `key.bin` 一并打包到可执行文件中（注意 `--add-data` 在 Windows 上使用分号分隔目标路径）：
 ```powershell
-C:/Python/python.exe -m PyInstaller --onefile --windowed --add-data "key.bin;." main.py
+C:/Python/python.exe -m PyInstaller --onefile --windowed --add-data "key.bin;." --icon icon.ico main.py
 ```
 
 3. 打包完成后，生成的可执行文件位于 `dist` 目录中（例如 `dist/main.exe`）。
