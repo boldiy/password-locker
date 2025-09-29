@@ -84,13 +84,15 @@ def save_password():
     if not pwd:
         messagebox.showwarning("提示", "请输入密码")
         return
+    # 如果已有密码文件，询问是否覆盖
+    if os.path.exists(PASSWORD_FILE):
+        if not messagebox.askyesno("覆盖确认", "已存在密码，是否覆盖？"):
+            return
     key = load_key()
     encrypted = encrypt_password(pwd, key)
     with open(PASSWORD_FILE, "w") as f:
         f.write(encrypted)
     messagebox.showinfo("成功", "密码已加密保存")
-    # 保存后再次禁用保存按钮，防止重复保存
-    save_btn.config(state=tk.DISABLED)
     # 清空输入框
     entry_pwd.delete(0, tk.END)
 
@@ -106,7 +108,20 @@ def view_password():
         encrypted = f.read()
     try:
         pwd = decrypt_password(encrypted, key)
-        messagebox.showinfo("密码", f"您的密码是：{pwd}")
+        # 尝试将密码复制到剪贴板（并在提示中注明）
+        copied = False
+        try:
+            root.clipboard_clear()
+            root.clipboard_append(pwd)
+            root.update()  # 将剪贴板内容刷新到系统
+            copied = True
+        except Exception:
+            copied = False
+
+        msg = f"您的密码是：{pwd}"
+        if copied:
+            msg += "\n\n（已复制到剪贴板）"
+        messagebox.showinfo("密码", msg)
         # 查看密码成功后，启用保存按钮
         save_btn.config(state=tk.NORMAL)
     except Exception as e:
@@ -120,8 +135,8 @@ tk.Label(root, text="输入密码：").pack(pady=10)
 entry_pwd = tk.Entry(root, show="*")
 entry_pwd.pack()
 
-# 初始化界面时，根据密码文件是否存在决定保存按钮状态
-save_btn = tk.Button(root, text="保存密码", command=save_password, state=tk.NORMAL if not os.path.exists(PASSWORD_FILE) else tk.DISABLED)
+# 初始化界面时，总是允许保存（允许在任意时间保存新密码）
+save_btn = tk.Button(root, text="保存密码", command=save_password, state=tk.NORMAL)
 save_btn.pack(pady=10)
 tk.Button(root, text="查看密码", command=view_password).pack(pady=10)
 

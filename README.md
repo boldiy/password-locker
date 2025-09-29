@@ -36,3 +36,21 @@ python main.py
 - 请妥善保管生成的key.bin文件
 - 程序需要网络连接以获取准确时间
 - 密码文件(password.txt)和密钥文件(key.bin)请妥善保管 
+
+## 打包为 Windows 可执行文件 (exe)
+
+如果你想把程序打包成单文件的 Windows 可执行程序，可以使用 PyInstaller。下面是在 Windows 上的示例步骤：
+
+1. 安装 PyInstaller（若尚未安装）：
+```powershell
+pip install pyinstaller
+```
+
+2. 在项目根目录运行下面的命令来生成单文件 GUI exe，并把 `key.bin` 一并打包到可执行文件中（注意 `--add-data` 在 Windows 上使用分号分隔目标路径）：
+```powershell
+C:/Python/python.exe -m PyInstaller --onefile --windowed --add-data "key.bin;." main.py
+```
+
+3. 打包完成后，生成的可执行文件位于 `dist` 目录中（例如 `dist/main.exe`）。
+
+注意：如果你的 Python 可执行路径不同，请将命令中的 `C:/Python/python.exe` 替换为对应的 Python 可执行路径，或者直接使用 `pyinstaller` 命令（若其已在 PATH 中）。
