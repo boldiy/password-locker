@@ -3,7 +3,8 @@ name: Build macOS executable
 on:
   workflow_dispatch:
   push:
-    branches: [ main ]
+    # Support both main and master branches in case default branch differs
+    branches: [ main, master ]
 
 jobs:
   build-macos:
@@ -91,8 +92,14 @@ jobs:
             ls -la dist || true
           fi
 
-      - name: Upload mac .app zip artifact
+      - name: Upload mac .app zip artifact (with fallbacks)
         uses: actions/upload-artifact@v4
         with:
           name: mac-executable
-          path: release/PasswordLocker-mac.zip
+          # Try multiple possible locations / patterns so upload doesn't fail if zip ended up elsewhere
+          path: |
+            release/PasswordLocker-mac.zip
+            dist/PasswordLocker-mac.zip
+            dist/PasswordLocker.app
+            dist/*.zip
+            release/*.zip
