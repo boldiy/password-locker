@@ -75,21 +75,47 @@ jobs:
           fi
           python -m PyInstaller --windowed --name "PasswordLocker" $ICON_ARG main.py
 
-      - name: Package .app into zip
+      - name: Package .app into zip (use ditto) and generate diagnostics
         run: |
+          set -e
           APPNAME="PasswordLocker.app"
+          mkdir -p release
           if [ -d "dist/$APPNAME" ]; then
-            ZIPNAME="PasswordLocker-mac.zip"
             cd dist
-            zip -r "$ZIPNAME" "$APPNAME"
-            mv "$ZIPNAME" .. || true
+            # Use ditto to create a compressed archive that preserves macOS resource forks
+            ZIPNAME="PasswordLocker-mac.zip"
+            ditto -c -k --sequesterRsrc --keepParent "$APPNAME" "$ZIPNAME"
+            mv "$ZIPNAME" ../release/ || true
             cd ..
-            mkdir -p release
-            mv dist/PasswordLocker-mac.zip release/ || true
             echo "Packaged dist/$APPNAME -> release/PasswordLocker-mac.zip"
+
+            # Diagnostics: record file info for the embedded executable
+            BINARY="dist/$APPNAME/Contents/MacOS/PasswordLocker"
+            DIAG=release/build-info.txt
+            echo "--- ls -la dist/$APPNAME/Contents/MacOS ---" > "$DIAG"
+            ls -la "dist/$APPNAME/Contents/MacOS" >> "$DIAG" 2>&1 || true
+            echo "" >> "$DIAG"
+            echo "--- file ---" >> "$DIAG"
+            file "$BINARY" >> "$DIAG" 2>&1 || true
+            echo "" >> "$DIAG"
+            echo "--- stat ---" >> "$DIAG"
+            stat -f "%N %z bytes %Sp" "$BINARY" >> "$DIAG" 2>&1 || true
+            echo "" >> "$DIAG"
+            echo "--- hexdump (first 256 bytes) ---" >> "$DIAG"
+            hexdump -C -n 256 "$BINARY" >> "$DIAG" 2>&1 || true
+            echo "" >> "$DIAG"
+            echo "--- strings (first 200 lines) ---" >> "$DIAG"
+            strings "$BINARY" | head -n 200 >> "$DIAG" 2>&1 || true
+            echo "" >> "$DIAG"
+            echo "--- sha256 ---" >> "$DIAG"
+            shasum -a 256 "$BINARY" >> "$DIAG" 2>&1 || true
+            echo "" >> "$DIAG"
+            echo "Diagnostics written to release/build-info.txt"
           else
             echo "Warning: dist/$APPNAME not found; listing dist contents:";
             ls -la dist || true
+            # create an empty diag so upload step has something
+            echo "dist/$APPNAME not found" > release/build-info.txt || true
           fi
 
       - name: Upload mac .app zip artifact (with fallbacks)
